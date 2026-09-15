@@ -45,7 +45,7 @@ export function Profile() {
           <Text style={styles.avatarText}>MP</Text>
         </View>
         <View>
-          <Text style={styles.heroTitle}>Mukansa Pure üyesi</Text>
+          <Text style={styles.heroTitle}>Mukansa One üyesi</Text>
           <Text style={styles.muted}>{household.region}</Text>
         </View>
       </View>
@@ -166,7 +166,7 @@ export function Profile() {
         <LogOut size={16} color={colors.muted} />
         <Text style={styles.logoutText}>Cihaz bağlantısını kaldır</Text>
       </Pressable>
-      <Text style={styles.version}>Mukansa Pure · Sürüm 1.0</Text>
+      <Text style={styles.version}>Mukansa One · Sürüm 1.0</Text>
     </ScrollView>
   )
 }

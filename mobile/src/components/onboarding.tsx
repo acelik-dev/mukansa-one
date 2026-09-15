@@ -213,7 +213,7 @@ function Splash() {
       </View>
       <View style={{ alignItems: 'center' }}>
         <Text style={styles.splashTitle}>
-          MUKANSA <Text style={{ color: colors.accent }}>PURE</Text>
+          MUKANSA <Text style={{ color: colors.accent }}>ONE</Text>
         </Text>
         <Text style={styles.splashTag}>Saf su, saf zarafet</Text>
       </View>

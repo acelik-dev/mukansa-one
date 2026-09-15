@@ -16,9 +16,9 @@ const manrope = Manrope({
 })
 
 export const metadata: Metadata = {
-  title: 'Mukansa Pure — Arıtma Cihazınızın Dijital İkizi',
+  title: 'Mukansa One — Arıtma Cihazınızın Dijital İkizi',
   description:
-    'Filtre ömrünü takip edin, tasarrufunuzu görün ve cihazınızı yönetin. Mukansa Pure, musluğa entegre arıtma cihazınızın premium mobil deneyimidir.',
+    'Filtre ömrünü takip edin, tasarrufunuzu görün ve cihazınızı yönetin. Mukansa One, musluğa entegre arıtma cihazınızın premium mobil deneyimidir.',
   generator: 'v0.app',
 }
 

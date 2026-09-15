@@ -39,7 +39,7 @@ export function Profile() {
           MP
         </span>
         <div>
-          <p className="font-semibold">Mukansa Pure üyesi</p>
+          <p className="font-semibold">Mukansa One üyesi</p>
           <p className="text-xs text-muted-foreground">{household.region}</p>
         </div>
       </div>
@@ -166,7 +166,7 @@ export function Profile() {
         Cihaz bağlantısını kaldır
       </button>
       <p className="mt-4 text-center text-xs text-muted-foreground">
-        Mukansa Pure · Sürüm 1.0
+        Mukansa One · Sürüm 1.0
       </p>
     </div>
   )

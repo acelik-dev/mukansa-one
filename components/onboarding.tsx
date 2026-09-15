@@ -201,7 +201,7 @@ function Splash() {
       </div>
       <div className="text-center">
         <h1 className="font-display text-2xl font-semibold tracking-wide">
-          MUKANSA <span className="text-accent">PURE</span>
+          MUKANSA <span className="text-accent">ONE</span>
         </h1>
         <p className="mt-1 text-xs uppercase tracking-[0.3em] text-muted-foreground">
           Saf su, saf zarafet

@@ -1,17 +1,21 @@
 {
   "expo": {
-    "name": "Mukansa Pure",
-    "slug": "mukansa-pure",
+    "name": "Mukansa One",
+    "slug": "mukansa-one",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0c1418",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mukansa.one",
+      "buildNumber": "1",
       "backgroundColor": "#0c1418"
     },
     "android": {
+      "package": "com.mukansa.one",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0c1418",
         "foregroundImage": "./assets/android-icon-foreground.png",

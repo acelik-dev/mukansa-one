@@ -1,4 +1,4 @@
-// Mukansa Pure — Tahmine dayalı hesaplama motoru (§3)
+// Mukansa One — Tahmine dayalı hesaplama motoru (§3)
 // Cihazda sensör yoktur; tüm değerler onboarding cevaplarından türetilir.
 // Tüm parametreler sunucudan güncellenebilir varsayılır; burada statik tutulur.
 
@@ -19,14 +19,14 @@ export interface DeviceModel {
 export const MODELS: Record<string, DeviceModel> = {
   standard: {
     id: 'standard',
-    name: 'Mukansa Pure — Standart',
+    name: 'Mukansa One — Standart',
     filterModel: 'Kartuş S1',
     capacityL: 3750,
     cartridgePriceTL: 900,
   },
   pro: {
     id: 'pro',
-    name: 'Mukansa Pure — Pro',
+    name: 'Mukansa One — Pro',
     filterModel: 'Kartuş P1',
     capacityL: 5000,
     cartridgePriceTL: 1200,
