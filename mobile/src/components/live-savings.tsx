@@ -1,0 +1,36 @@
+import { useEffect, useRef, useState } from 'react'
+import { Text, type StyleProp, type TextStyle } from 'react-native'
+import { formatTL } from '../lib/calc'
+
+export function LiveSavings({
+  base,
+  dailyRate,
+  style,
+}: {
+  base: number
+  dailyRate: number
+  style?: StyleProp<TextStyle>
+}) {
+  const [value, setValue] = useState(0)
+  const mountRef = useRef<number | null>(null)
+  const perSecond = dailyRate / 86400
+
+  useEffect(() => {
+    let raf = 0
+    const introMs = 1600
+    const tick = (t: number) => {
+      if (mountRef.current === null) mountRef.current = t
+      const elapsed = t - mountRef.current
+      const introP = Math.min(1, elapsed / introMs)
+      const eased = 1 - Math.pow(1 - introP, 3)
+      const liveExtra = perSecond * (elapsed / 1000)
+      setValue(base * eased + (introP >= 1 ? liveExtra : 0))
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base, dailyRate])
+
+  return <Text style={[{ fontVariant: ['tabular-nums'] }, style]}>{formatTL(value)}</Text>
+}
