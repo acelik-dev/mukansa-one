@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { subscribeToTaps } from '../lib/push'
 import { useApp } from '../lib/store'
 import { Dashboard } from '../screens/dashboard'
 import { Device } from '../screens/device'
@@ -11,9 +12,20 @@ import { BottomNav, type Tab } from './bottom-nav'
 import { Onboarding } from './onboarding'
 
 export function AppShell() {
-  const { activated } = useApp()
+  const { activated, hydrated } = useApp()
   const [tab, setTab] = useState<Tab>('home')
   const insets = useSafeAreaInsets()
+
+  // Bildirime dokunulunca sunucunun gönderdiği data.screen sekmesine git
+  useEffect(() => {
+    if (!activated) return
+    return subscribeToTaps((screen) => {
+      if (screen === 'device' || screen === 'stats') setTab(screen)
+    })
+  }, [activated])
+
+  // Kayıtlı oturum okunana kadar boş zemin (onboarding'in yanıp sönmesini önler)
+  if (!hydrated) return <View style={styles.root} />
 
   if (!activated) {
     return (

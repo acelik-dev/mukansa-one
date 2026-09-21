@@ -35,6 +35,7 @@ import {
   formatNum,
   formatTL,
 } from '../lib/calc'
+import { ApiError } from '../lib/api'
 import { useApp } from '../lib/store'
 import { AnimatedNumber } from './animated-number'
 import { Card, Eyebrow, PrimaryButton, SelectCard } from './ui-kit'
@@ -64,10 +65,9 @@ const REGIONS = [
 ]
 
 export function Onboarding() {
-  const { completeOnboarding, loadDemo } = useApp()
-  const [step, setStep] = useState<Step>('splash')
-  const [serialNo, setSerialNo] = useState('')
-  const [modelId, setModelId] = useState('pro')
+  const { activate, completeOnboarding, loadDemo, resume, serialNo, modelId } = useApp()
+  // Cihaz daha önce aktive edilmiş ama onboarding yarım kalmışsa doğrulama adımı atlanır
+  const [step, setStep] = useState<Step>(resume ? 'model' : 'splash')
   const [people, setPeople] = useState(4)
   const [uses, setUses] = useState<UseCase[]>(['drinking', 'tea', 'cooking'])
   const [presence, setPresence] = useState<Presence>('home')
@@ -93,12 +93,23 @@ export function Onboarding() {
     return () => clearTimeout(t)
   }, [step])
 
-  const finish = () =>
-    completeOnboarding({
-      serialNo: serialNo || 'MKP-0000-0000',
-      modelId,
-      household,
-    })
+  const [finishing, setFinishing] = useState(false)
+  const [finishError, setFinishError] = useState<string | null>(null)
+
+  const finish = async (allowPush: boolean) => {
+    setFinishing(true)
+    setFinishError(null)
+    try {
+      await completeOnboarding({ household, allowPush })
+    } catch (err) {
+      setFinishError(
+        err instanceof ApiError && err.isNetwork
+          ? 'Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.'
+          : 'Kurulum tamamlanamadı. Lütfen tekrar deneyin.',
+      )
+      setFinishing(false)
+    }
+  }
 
   const goBack = () => {
     const order: Step[] = [
@@ -152,11 +163,8 @@ export function Onboarding() {
         )}
         {step === 'activation' && (
           <Activation
-            onVerified={(s, m) => {
-              setSerialNo(s)
-              setModelId(m)
-              setStep('model')
-            }}
+            onSubmit={activate}
+            onVerified={() => setStep('model')}
           />
         )}
         {step === 'model' && (
@@ -197,7 +205,9 @@ export function Onboarding() {
             onNext={() => setStep('notif')}
           />
         )}
-        {step === 'notif' && <Notifications onFinish={finish} />}
+        {step === 'notif' && (
+          <Notifications onFinish={finish} busy={finishing} error={finishError} />
+        )}
       </View>
     </View>
   )
@@ -249,12 +259,14 @@ function Welcome({ onStart, onDemo }: { onStart: () => void; onDemo: () => void 
 }
 
 function Activation({
+  onSubmit,
   onVerified,
 }: {
-  onVerified: (serial: string, modelId: string) => void
+  onSubmit: (code: string) => Promise<{ onboarded: boolean }>
+  onVerified: () => void
 }) {
   const [digits, setDigits] = useState<string[]>(Array(12).fill(''))
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [verifying, setVerifying] = useState(false)
   const inputsRef = useRef<(TextInput | null)[]>([])
 
@@ -263,20 +275,38 @@ function Activation({
     const next = [...digits]
     next[i] = clean
     setDigits(next)
-    setError(false)
+    setError(null)
     if (clean && i < 11) inputsRef.current[i + 1]?.focus()
   }
 
-  const submit = () => {
+  const submit = async () => {
     const code = digits.join('')
     if (code.length < 12) {
-      setError(true)
+      setError('Lütfen 12 haneli seri numarasını eksiksiz girin.')
       return
     }
     setVerifying(true)
-    setTimeout(() => {
-      onVerified(`MKP-${code.slice(0, 4)}-${code.slice(4, 8)}`, 'pro')
-    }, 1400)
+    setError(null)
+    try {
+      const { onboarded } = await onSubmit(code)
+      // Onboarding daha önce tamamlandıysa (ör. ikinci telefon) store ana uygulamaya geçer
+      if (!onboarded) onVerified()
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.code === 'invalid_code'
+            ? 'Bu seri numarası tanınmadı. Etiketteki 12 haneyi kontrol edin.'
+            : err.code === 'device_blocked'
+              ? 'Bu cihaz için erişim kapatılmış. Lütfen destek ekibiyle iletişime geçin.'
+            : err.status === 429
+              ? 'Çok fazla deneme yapıldı. Bir dakika sonra tekrar deneyin.'
+              : err.isNetwork
+                ? 'Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.'
+                : 'Doğrulama şu an yapılamıyor. Lütfen tekrar deneyin.'
+          : 'Doğrulama şu an yapılamıyor. Lütfen tekrar deneyin.',
+      )
+      setVerifying(false)
+    }
   }
 
   return (
@@ -312,17 +342,13 @@ function Activation({
               accessibilityLabel={`Hane ${i + 1}`}
               style={[
                 styles.digitInput,
-                error && { borderColor: colors.danger },
+                !!error && { borderColor: colors.danger },
                 (i === 3 || i === 7) && { marginRight: 10 },
               ]}
             />
           ))}
         </View>
-        {error && (
-          <Text style={styles.errorText}>
-            Lütfen 12 haneli seri numarasını eksiksiz girin.
-          </Text>
-        )}
+        {!!error && <Text style={styles.errorText}>{error}</Text>}
         <Text style={styles.serialHint}>
           Seri numarası cihazın alt yüzeyindeki gümüş etikette bulunur.
         </Text>
@@ -684,7 +710,15 @@ function Summary({
   )
 }
 
-function Notifications({ onFinish }: { onFinish: () => void }) {
+function Notifications({
+  onFinish,
+  busy,
+  error,
+}: {
+  onFinish: (allowPush: boolean) => void
+  busy: boolean
+  error: string | null
+}) {
   return (
     <View style={styles.screenPad}>
       <View style={styles.flexCenter}>
@@ -706,10 +740,11 @@ function Notifications({ onFinish }: { onFinish: () => void }) {
         </View>
       </View>
       <View style={styles.ctaCol}>
-        <PrimaryButton onPress={onFinish}>
-          <Text style={styles.primaryLabel}>Bildirimlere izin ver</Text>
+        {!!error && <Text style={[styles.errorText, { textAlign: 'center' }]}>{error}</Text>}
+        <PrimaryButton onPress={() => onFinish(true)} disabled={busy}>
+          <Text style={styles.primaryLabel}>{busy ? 'Kuruluyor…' : 'Bildirimlere izin ver'}</Text>
         </PrimaryButton>
-        <Pressable onPress={onFinish} style={styles.linkBtn}>
+        <Pressable onPress={() => onFinish(false)} disabled={busy} style={styles.linkBtn}>
           <Text style={styles.linkText}>Şimdilik geç</Text>
         </Pressable>
       </View>

@@ -73,6 +73,14 @@ export interface Household {
   region?: string
 }
 
+export const DEFAULT_HOUSEHOLD: Household = {
+  people: 4,
+  uses: ['drinking', 'tea', 'cooking'],
+  presence: 'home',
+  source: 'damacana',
+  region: 'İstanbul / Beşiktaş',
+}
+
 /** §3.1 Günlük tüketim tahmini (L/gün) */
 export function dailyConsumptionL(h: Household): number {
   const perPerson =
@@ -165,6 +173,70 @@ export function treeEquivalent(co2Kg: number): number {
 
 export function daysBetween(from: Date, to: Date): number {
   return Math.max(0, Math.floor((to.getTime() - from.getTime()) / 86400000))
+}
+
+// ---------------------------------------------------------------------------
+// Bileşik metrikler — hem mobil uygulama hem backend bu fonksiyonu kullanır.
+// ---------------------------------------------------------------------------
+
+export interface DeviceState {
+  modelId: string
+  household: Household
+  /** Aktivasyon zamanı (epoch ms) */
+  activationMs: number
+  /** Mevcut kartuşun takılma zamanı (epoch ms) */
+  filterInstallMs: number
+}
+
+export interface Metrics {
+  model: DeviceModel
+  dailyL: number
+  monthlyL: number
+  dailySaving: number
+  filter: FilterStatus
+  tone: RingTone
+  daysSinceActivation: number
+  totalLiters: number
+  cumulativeSaving: number
+  bottles: number
+  co2Kg: number
+  trees: number
+  prevCostPerL: number
+  purifiedCostPerL: number
+  paybackMonths: number
+}
+
+export function computeMetrics(state: DeviceState, now: Date = new Date()): Metrics {
+  const model = MODELS[state.modelId] ?? MODELS.pro
+  const dailyL = dailyConsumptionL(state.household)
+  const daysSinceActivation = daysBetween(new Date(state.activationMs), now)
+  const daysSinceInstall = daysBetween(new Date(state.filterInstallMs), now)
+  const filter = filterStatus(state.household, model, daysSinceInstall)
+  const dailySaving = dailySavingsTL(state.household, model)
+  const totalLiters = dailyL * daysSinceActivation
+  const cumulativeSaving = dailySaving * daysSinceActivation
+  const bottles = bottlesPrevented(totalLiters, state.household.source)
+  const co2Kg = co2SavedKg(bottles)
+  const paybackMonths =
+    dailySaving > 0 ? (model.cartridgePriceTL * 6) / (dailySaving * 30) : 0
+
+  return {
+    model,
+    dailyL,
+    monthlyL: dailyL * 30,
+    dailySaving,
+    filter,
+    tone: ringTone(filter.percent),
+    daysSinceActivation,
+    totalLiters,
+    cumulativeSaving,
+    bottles,
+    co2Kg,
+    trees: treeEquivalent(co2Kg),
+    prevCostPerL: previousCostPerL(state.household),
+    purifiedCostPerL: purifiedCostPerL(model),
+    paybackMonths,
+  }
 }
 
 // Biçimlendiriciler

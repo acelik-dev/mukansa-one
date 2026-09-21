@@ -10,6 +10,8 @@ import {
   Users,
 } from 'lucide-react-native'
 import {
+  Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -33,8 +35,24 @@ const SOURCE_LABEL: Record<SourceType, string> = {
   mixed: 'Karışık',
 }
 
+const UNLINK_TITLE = 'Cihaz bağlantısı kaldırılsın mı?'
+const UNLINK_BODY =
+  'Bu telefondaki oturum kapanır. Verileriniz cihaza bağlı kalır; seri numaranızla istediğiniz zaman yeniden bağlanabilirsiniz.'
+
 export function Profile() {
   const { household, notif, updateHousehold, updateNotif, reset } = useApp()
+
+  const confirmUnlink = () => {
+    // react-native-web'de Alert.alert çalışmaz
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${UNLINK_TITLE}\n\n${UNLINK_BODY}`)) void reset()
+      return
+    }
+    Alert.alert(UNLINK_TITLE, UNLINK_BODY, [
+      { text: 'Vazgeç', style: 'cancel' },
+      { text: 'Kaldır', style: 'destructive', onPress: () => void reset() },
+    ])
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.pad} showsVerticalScrollIndicator={false}>
@@ -59,7 +77,7 @@ export function Profile() {
           </View>
           <Stepper
             value={household.people}
-            onChange={(n) => updateHousehold({ people: Math.max(1, n) })}
+            onChange={(n) => updateHousehold({ people: Math.min(20, Math.max(1, n)) })}
           />
         </View>
         <View style={[styles.rowBetween, { marginTop: 16 }]}>
@@ -162,7 +180,10 @@ export function Profile() {
         <LinkRow icon={<LifeBuoy size={20} color={colors.accent} />} label="Yardım merkezi" last />
       </View>
 
-      <Pressable onPress={reset} style={styles.logout}>
+      <Pressable
+        onPress={confirmUnlink}
+        style={styles.logout}
+      >
         <LogOut size={16} color={colors.muted} />
         <Text style={styles.logoutText}>Cihaz bağlantısını kaldır</Text>
       </Pressable>
@@ -174,11 +195,11 @@ export function Profile() {
 function Stepper({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
     <View style={styles.row}>
-      <Pressable onPress={() => onChange(value - 1)} style={styles.stepBtn}>
+      <Pressable onPress={() => onChange(value - 1)} accessibilityLabel="Azalt" style={styles.stepBtn}>
         <Minus size={16} color={colors.foreground} />
       </Pressable>
       <Text style={styles.stepVal}>{value}</Text>
-      <Pressable onPress={() => onChange(value + 1)} style={styles.stepBtn}>
+      <Pressable onPress={() => onChange(value + 1)} accessibilityLabel="Artır" style={styles.stepBtn}>
         <Plus size={16} color={colors.foreground} />
       </Pressable>
     </View>
