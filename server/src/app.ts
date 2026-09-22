@@ -11,8 +11,9 @@ import {
   onboardingBody,
   profileBody,
   pushTokenBody,
+  serviceRequestBody,
 } from './schema.ts'
-import { getDevice, toState, type DeviceRow } from './state.ts'
+import { getDevice, toServiceRequestDTO, toState, type DeviceRow, type ServiceRequestRow } from './state.ts'
 
 const MAX_SESSIONS_PER_DEVICE = 10
 // last_seen_at her istekte yazılmaz
@@ -185,6 +186,29 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   app.delete('/v1/session', { preHandler: requireAuth }, async (req, reply) => {
     db.prepare('DELETE FROM sessions WHERE id = ?').run(req.auth!.sessionId)
     return reply.code(204).send()
+  })
+
+  app.post('/v1/service-requests', { preHandler: requireAuth }, async (req, reply) => {
+    const body = serviceRequestBody.parse(req.body)
+    const device = req.auth!.device
+    const t = now()
+    const res = db
+      .prepare(
+        `INSERT INTO service_requests (device_id, category, description, contact_name, contact_phone, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'open', ?, ?)`,
+      )
+      .run(device.id, body.category, body.description, body.contactName ?? null, body.contactPhone, t, t)
+    const row = db
+      .prepare('SELECT * FROM service_requests WHERE id = ?')
+      .get(Number(res.lastInsertRowid)) as unknown as ServiceRequestRow
+    return reply.code(201).send(toServiceRequestDTO(row))
+  })
+
+  app.get('/v1/service-requests', { preHandler: requireAuth }, async (req) => {
+    const rows = db
+      .prepare('SELECT * FROM service_requests WHERE device_id = ? ORDER BY created_at DESC')
+      .all(req.auth!.device.id) as unknown as ServiceRequestRow[]
+    return { items: rows.map(toServiceRequestDTO) }
   })
 
   return app

@@ -9,16 +9,16 @@ const shortDay = (iso) => {
   return `${Number(d)}.${m}`
 }
 
-function kpi({ label, value, format = num, unit, foot, cls = '' }) {
+function kpi({ label, value, format = num, unit, foot, cls = '', onClick }) {
   const n = h('span', {}, format(0))
   countUp(n, value, format)
   const v = h('div', { class: 'value' }, n, unit ? h('small', {}, unit) : null)
-  return h('div', { class: `card kpi ${cls}` }, h('div', { class: 'label' }, label), v, h('div', { class: 'foot' }, foot))
+  return h('div', { class: `card kpi ${cls} ${onClick ? 'click' : ''}`, onClick }, h('div', { class: 'label' }, label), v, h('div', { class: 'foot' }, foot))
 }
 
 export async function overviewView(root, ctx) {
   root.replaceChildren(
-    h('div', { class: 'grid g-4' }, skeleton(150), skeleton(150), skeleton(150), skeleton(150)),
+    h('div', { class: 'grid g-5' }, skeleton(150), skeleton(150), skeleton(150), skeleton(150), skeleton(150)),
     skeleton(160, { marginTop: '18px' }),
   )
   const d = await get('/api/overview')
@@ -44,7 +44,7 @@ export async function overviewView(root, ctx) {
 
     h(
       'div',
-      { class: 'grid g-4' },
+      { class: 'grid g-5' },
       kpi({
         label: 'Toplam cihaz',
         value: t.devices,
@@ -55,7 +55,15 @@ export async function overviewView(root, ctx) {
         label: 'Filtre dikkat',
         value: d.health.warning + d.health.danger,
         cls: d.health.danger ? 'danger' : '',
+        onClick: () => ctx.navigate('/devices?tone=danger'),
         foot: [h('span', {}, h('b', {}, num(d.health.danger)), ' kritik'), h('span', {}, h('b', {}, num(d.health.warning)), ' uyarı'), h('span', {}, h('b', {}, num(d.health.ok)), ' sağlıklı')],
+      }),
+      kpi({
+        label: 'Servis talebi',
+        value: d.openServiceRequests,
+        cls: d.openServiceRequests ? 'danger' : '',
+        onClick: () => ctx.navigate('/service-requests'),
+        foot: [h('span', {}, d.openServiceRequests ? 'açık talep · tıkla' : 'açık talep yok')],
       }),
       kpi({ label: 'Bildirim · 7 gün', value: d.notifications.last7d, foot: Object.entries(d.notifications.byKind).map(([k, n]) => h('span', {}, h('b', {}, num(n)), ` ${KIND[k]?.label.toLowerCase() ?? k}`)).concat(d.notifications.last7d ? [] : [h('span', {}, 'henüz gönderim yok')]) }),
     ),

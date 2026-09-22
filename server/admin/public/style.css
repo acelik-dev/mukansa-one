@@ -191,6 +191,7 @@ h1.page-title em { font-style: normal; color: var(--gold-2); }
 .card-title { font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0; }
 .card-note { font-size: 12.5px; color: var(--muted); }
 .grid { display: grid; gap: 18px; }
+.g-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .g-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .g-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .g-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -406,7 +407,7 @@ table.t { width: 100%; border-collapse: collapse; min-width: 720px; }
 
 /* ------------------------------------------------------------------ duyarlı */
 @media (max-width: 1180px) {
-  .g-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-5, .g-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .g-21, .g-12 { grid-template-columns: minmax(0, 1fr); }
 }
@@ -420,6 +421,6 @@ table.t { width: 100%; border-collapse: collapse; min-width: 720px; }
   .main { padding-top: 22px; }
 }
 @media (max-width: 560px) {
-  .g-4, .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .g-5, .g-4, .hero-grid { grid-template-columns: minmax(0, 1fr); }
   .kpi .value { font-size: 40px; }
 }

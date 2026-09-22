@@ -38,6 +38,7 @@ import {
 import { ApiError } from '../lib/api'
 import { useApp } from '../lib/store'
 import { AnimatedNumber } from './animated-number'
+import { RegionPicker } from './region-picker'
 import { Card, Eyebrow, PrimaryButton, SelectCard } from './ui-kit'
 import { colors } from '../theme'
 
@@ -55,15 +56,6 @@ type Step =
 
 const QUESTION_STEPS: Step[] = ['q1', 'q2', 'q3', 'q4']
 
-const REGIONS = [
-  'İstanbul / Beşiktaş',
-  'İstanbul / Kadıköy',
-  'Ankara / Çankaya',
-  'İzmir / Karşıyaka',
-  'Bursa / Nilüfer',
-  'Antalya / Konyaaltı',
-]
-
 export function Onboarding() {
   const { activate, completeOnboarding, loadDemo, resume, serialNo, modelId } = useApp()
   // Cihaz daha önce aktive edilmiş ama onboarding yarım kalmışsa doğrulama adımı atlanır
@@ -73,7 +65,7 @@ export function Onboarding() {
   const [presence, setPresence] = useState<Presence>('home')
   const [source, setSource] = useState<SourceType>('damacana')
   const [damacanaPerMonth, setDamacanaPerMonth] = useState(6)
-  const [region, setRegion] = useState(REGIONS[0])
+  const [region, setRegion] = useState('')
 
   const household: Household = useMemo(
     () => ({
@@ -624,28 +616,22 @@ function Q4({
   setRegion: (r: string) => void
   onNext: () => void
 }) {
+  // RegionPicker kendi FlatList'ini yönetir; QuestionShell'in ScrollView'ı ile
+  // iç içe kaydırma çakışmaması için burada QuestionShell kullanılmaz.
   return (
-    <QuestionShell
-      title="Nerede yaşıyorsunuz?"
-      subtitle="Su tarifenizi ve bölgesel kalite raporunuzu buna göre gösteririz."
-      onNext={onNext}
-    >
-      <View style={{ gap: 10 }}>
-        {REGIONS.map((r) => (
-          <SelectCard
-            key={r}
-            selected={region === r}
-            onPress={() => setRegion(r)}
-          >
-            <MapPin
-              size={20}
-              color={region === r ? colors.accent : colors.muted}
-            />
-            <Text style={styles.selectLabel}>{r}</Text>
-          </SelectCard>
-        ))}
+    <View style={styles.screenPad}>
+      <Text style={styles.h2}>Nerede yaşıyorsunuz?</Text>
+      <Text style={styles.sub}>
+        Su tarifenizi ve bölgesel kalite raporunuzu buna göre gösteririz.
+      </Text>
+      <View style={{ flex: 1, marginTop: 20 }}>
+        <RegionPicker value={region} onChange={setRegion} />
       </View>
-    </QuestionShell>
+      <PrimaryButton onPress={onNext} disabled={!region} style={{ marginTop: 16 }}>
+        <Text style={styles.primaryLabel}>Devam et</Text>
+        <ChevronRight size={20} color={colors.accentForeground} />
+      </PrimaryButton>
+    </View>
   )
 }
 

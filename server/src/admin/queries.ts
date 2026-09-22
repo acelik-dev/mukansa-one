@@ -1,6 +1,6 @@
 import { computeMetrics, MODELS, type Metrics } from '../../../mobile/src/lib/calc.ts'
 import type { DB } from '../db.ts'
-import { readProfile, type DeviceRow } from '../state.ts'
+import { readProfile, toServiceRequestDTO, type DeviceRow, type ServiceRequestRow } from '../state.ts'
 
 const DAY = 86400000
 const TR_OFFSET_MS = 3 * 3600 * 1000
@@ -226,6 +226,10 @@ export function overview(db: DB, now: number) {
   const byKind: Record<string, number> = {}
   for (const n of notif) byKind[notificationKind(n.key)] = (byKind[notificationKind(n.key)] ?? 0) + 1
 
+  const openServiceRequests = (
+    db.prepare("SELECT COUNT(*) AS n FROM service_requests WHERE status IN ('open','in_progress')").get() as { n: number }
+  ).n
+
   return {
     totals,
     fleet,
@@ -236,6 +240,7 @@ export function overview(db: DB, now: number) {
     notifications: { last7d: notif.length, byKind },
     models: [...models].map(([id, count]) => ({ id, name: MODELS[id]?.name ?? id, count })),
     regions: [...regions].map(([region, count]) => ({ region, count })).sort((a, b) => b.count - a.count).slice(0, 8),
+    openServiceRequests,
     serverTime: now,
   }
 }
@@ -270,6 +275,9 @@ export function deviceDetail(db: DB, row: DeviceRow, now: number) {
   const audit = db
     .prepare('SELECT id, at, admin_name, action, detail FROM audit_log WHERE device_id = ? ORDER BY at DESC, id DESC LIMIT 30')
     .all(row.id) as { id: number; at: number; admin_name: string | null; action: string; detail: string | null }[]
+  const serviceRequests = (
+    db.prepare('SELECT * FROM service_requests WHERE device_id = ? ORDER BY created_at DESC').all(row.id) as unknown as ServiceRequestRow[]
+  ).map(toServiceRequestDTO)
 
   return {
     summary,
@@ -293,5 +301,39 @@ export function deviceDetail(db: DB, row: DeviceRow, now: number) {
     sessions,
     notifications,
     audit: audit.map((a) => ({ id: a.id, at: a.at, admin: a.admin_name, action: a.action, detail: a.detail })),
+    serviceRequests,
   }
+}
+
+export interface ServiceRequestListParams {
+  status?: string
+  page?: number
+  pageSize?: number
+}
+
+/** Yönetim paneli için: tüm cihazlardaki servis taleplerinin genel listesi (cihaz bilgisiyle birlikte) */
+export function listServiceRequests(db: DB, p: ServiceRequestListParams) {
+  const rows = db
+    .prepare(
+      `SELECT sr.*, d.serial_no, d.model_id
+       FROM service_requests sr JOIN devices d ON d.id = sr.device_id
+       ${p.status && p.status !== 'all' ? 'WHERE sr.status = ?' : ''}
+       ORDER BY sr.created_at DESC`,
+    )
+    .all(...(p.status && p.status !== 'all' ? [p.status] : [])) as unknown as (ServiceRequestRow & {
+    serial_no: string
+    model_id: string
+  })[]
+
+  const pageSize = Math.min(Math.max(p.pageSize ?? 25, 5), 100)
+  const total = rows.length
+  const pages = Math.max(1, Math.ceil(total / pageSize))
+  const page = Math.min(Math.max(p.page ?? 1, 1), pages)
+  const items = rows.slice((page - 1) * pageSize, page * pageSize).map((r) => ({
+    ...toServiceRequestDTO(r),
+    deviceId: r.device_id,
+    serialNo: r.serial_no,
+    modelId: r.model_id,
+  }))
+  return { total, page, pages, pageSize, items }
 }

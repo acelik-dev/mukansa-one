@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import * as Haptics from 'expo-haptics'
 import {
   BadgeCheck,
@@ -20,7 +20,10 @@ import {
   Text,
   View,
 } from 'react-native'
+import { ServiceRequestModal } from '../components/service-request-modal'
+import type { ServiceRequestDTO } from '../lib/api'
 import { formatNum } from '../lib/calc'
+import { SERVICE_CATEGORY_LABEL, SERVICE_STATUS_LABEL, type ServiceStatus } from '../lib/service'
 import { useApp } from '../lib/store'
 import { colors } from '../theme'
 
@@ -32,10 +35,30 @@ function formatDate(ms: number) {
   })
 }
 
+function statusColor(status: ServiceStatus) {
+  if (status === 'open') return colors.warning
+  if (status === 'in_progress') return colors.waterLight
+  if (status === 'cancelled') return colors.muted
+  return colors.accent
+}
+
 export function Device() {
-  const { metrics, serialNo, activationMs, filterInstallMs, replaceFilter } = useApp()
+  const { metrics, serialNo, activationMs, filterInstallMs, replaceFilter, listServiceRequests } =
+    useApp()
   const { model, filter, tone } = metrics
   const [flow, setFlow] = useState<'idle' | 'scan' | 'done'>('idle')
+  const [serviceModal, setServiceModal] = useState(false)
+  const [requests, setRequests] = useState<ServiceRequestDTO[]>([])
+
+  const refreshRequests = useCallback(() => {
+    listServiceRequests()
+      .then(setRequests)
+      .catch(() => {})
+  }, [listServiceRequests])
+
+  useEffect(() => {
+    refreshRequests()
+  }, [refreshRequests])
 
   const toneColor =
     tone === 'danger' ? colors.danger : tone === 'warning' ? colors.warning : colors.waterLight
@@ -107,8 +130,40 @@ export function Device() {
 
       <Text style={styles.section}>Servis</Text>
       <View style={styles.serviceList}>
-        <ServiceRow icon={<Wrench size={20} color={colors.accent} />} label="Teknisyen randevusu al" last />
+        <ServiceRow
+          icon={<Wrench size={20} color={colors.accent} />}
+          label="Teknik servis talebi oluştur"
+          last
+          onPress={() => setServiceModal(true)}
+        />
       </View>
+
+      {requests.length > 0 && (
+        <>
+          <Text style={styles.section}>Taleplerim</Text>
+          <View style={styles.serviceList}>
+            {requests.map((r, i) => (
+              <View
+                key={r.id}
+                style={[styles.requestRow, i < requests.length - 1 && styles.serviceBorder]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.requestTitle}>{SERVICE_CATEGORY_LABEL[r.category]}</Text>
+                  <Text style={styles.requestDesc} numberOfLines={2}>
+                    {r.description}
+                  </Text>
+                  <Text style={styles.muted}>{formatDate(r.createdAt)}</Text>
+                </View>
+                <View style={[styles.statusChip, { borderColor: statusColor(r.status) }]}>
+                  <Text style={[styles.statusChipText, { color: statusColor(r.status) }]}>
+                    {SERVICE_STATUS_LABEL[r.status]}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
 
       <Modal visible={flow !== 'idle'} transparent animationType="fade">
         <ReplaceFilterFlow
@@ -120,6 +175,12 @@ export function Device() {
           onClose={() => setFlow('idle')}
         />
       </Modal>
+
+      <ServiceRequestModal
+        visible={serviceModal}
+        onClose={() => setServiceModal(false)}
+        onCreated={refreshRequests}
+      />
     </ScrollView>
   )
 }
@@ -146,13 +207,15 @@ function ServiceRow({
   icon,
   label,
   last,
+  onPress,
 }: {
   icon: ReactNode
   label: string
   last?: boolean
+  onPress?: () => void
 }) {
   return (
-    <Pressable style={[styles.serviceRow, !last && styles.serviceBorder]}>
+    <Pressable style={[styles.serviceRow, !last && styles.serviceBorder]} onPress={onPress}>
       {icon}
       <Text style={styles.serviceLabel}>{label}</Text>
       <ChevronRight size={16} color={colors.muted} />
@@ -313,6 +376,21 @@ const styles = StyleSheet.create({
   },
   serviceBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   serviceLabel: { flex: 1, fontSize: 14, fontWeight: '500', color: colors.foreground },
+  requestRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 16,
+  },
+  requestTitle: { fontSize: 14, fontWeight: '600', color: colors.foreground },
+  requestDesc: { marginTop: 4, fontSize: 13, color: colors.muted, lineHeight: 18 },
+  statusChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  statusChipText: { fontSize: 11, fontWeight: '600' },
   modalBg: {
     flex: 1,
     backgroundColor: 'rgba(12,20,24,0.9)',

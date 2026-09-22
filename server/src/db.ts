@@ -75,7 +75,24 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX audit_at ON audit_log(at DESC);
   CREATE INDEX audit_device ON audit_log(device_id);
+  `,
+  // v3: teknik servis talepleri (kullanıcı uygulamadan, yönetici panelden yönetir)
   `
+  CREATE TABLE service_requests (
+    id INTEGER PRIMARY KEY,
+    device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    description TEXT NOT NULL,
+    contact_name TEXT,
+    contact_phone TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open',
+    admin_note TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE INDEX service_requests_device ON service_requests(device_id);
+  CREATE INDEX service_requests_status ON service_requests(status, created_at DESC);
+  `,
 ]
 
 export function openDb(path: string): DB {

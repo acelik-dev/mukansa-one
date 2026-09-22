@@ -1,5 +1,12 @@
 import { z } from 'zod'
 import { DEFAULT_HOUSEHOLD, type Household } from '../../mobile/src/lib/calc.ts'
+import {
+  PHONE_PATTERN,
+  SERVICE_CATEGORIES,
+  SERVICE_CONTACT_NAME_MAX,
+  SERVICE_DESCRIPTION_MAX,
+  SERVICE_STATUSES,
+} from '../../mobile/src/lib/service.ts'
 
 export const householdSchema = z.object({
   people: z.number().int().min(1).max(20),
@@ -51,3 +58,20 @@ export const pushTokenBody = z.object({
   token: z.string().regex(/^Expo(nent)?PushToken\[[^\]]+\]$/),
   platform: z.enum(['ios', 'android']).optional(),
 })
+
+const categoryTuple = SERVICE_CATEGORIES as [string, ...string[]]
+const statusTuple = SERVICE_STATUSES as [string, ...string[]]
+
+export const serviceRequestBody = z.object({
+  category: z.enum(categoryTuple),
+  description: z.string().trim().min(1).max(SERVICE_DESCRIPTION_MAX),
+  contactName: z.string().trim().max(SERVICE_CONTACT_NAME_MAX).optional(),
+  contactPhone: z.string().trim().regex(PHONE_PATTERN, 'Geçerli bir telefon numarası girin'),
+})
+
+export const serviceRequestActionBody = z
+  .object({
+    status: z.enum(statusTuple).optional(),
+    adminNote: z.string().trim().max(1000).optional(),
+  })
+  .refine((b) => b.status !== undefined || b.adminNote !== undefined, 'status veya adminNote gerekli')

@@ -29,7 +29,7 @@ export function AppShell() {
 
   if (!activated) {
     return (
-      <View style={[styles.root, { paddingTop: insets.top }]}>
+      <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <Onboarding />
       </View>
     )

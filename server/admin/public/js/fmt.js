@@ -65,10 +65,24 @@ export const AUDIT = {
   import_codes: 'Kod içe aktardı',
   export_codes: 'Kod dışa aktardı',
   run_scheduler: 'Zamanlayıcıyı çalıştırdı',
+  service_request_update: 'Servis talebini güncelledi',
 }
 export const USES = { drinking: 'İçme suyu', tea: 'Çay & kahve', cooking: 'Yemek', pet: 'Evcil hayvan' }
 export const PRESENCE = { home: 'Çoğunlukla evde', mixed: 'Karışık', away: 'Gündüz dışarıda' }
 export const SOURCE = { damacana: 'Damacana', pet: 'Pet şişe', tap: 'Musluk suyu', mixed: 'Karışık' }
+// server/src/service.ts (mobile/src/lib/service.ts) ile senkron tutulmalı
+export const SERVICE_CATEGORY = {
+  ariza: { label: 'Arıza / çalışmıyor', cls: 'danger' },
+  bakim: { label: 'Periyodik bakım', cls: 'water' },
+  filtre: { label: 'Filtre değişimi', cls: 'gold' },
+  diger: { label: 'Diğer', cls: 'mute' },
+}
+export const SERVICE_STATUS = {
+  open: { label: 'Yeni', cls: 'warn' },
+  in_progress: { label: 'İşlemde', cls: 'water' },
+  done: { label: 'Tamamlandı', cls: 'ok' },
+  cancelled: { label: 'İptal edildi', cls: 'mute' },
+}
 export const ERRORS = {
   invalid_credentials: 'Kullanıcı adı veya parola hatalı.',
   locked: 'Çok fazla hatalı deneme. 15 dakika sonra tekrar deneyin.',

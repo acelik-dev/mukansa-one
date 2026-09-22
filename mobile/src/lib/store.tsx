@@ -10,10 +10,11 @@ import {
   type ReactNode,
 } from 'react'
 import { AppState as RNAppState, Platform } from 'react-native'
-import { api, ApiError, type ServerState } from './api'
+import { api, ApiError, type ServerState, type ServiceRequestDTO } from './api'
 import { computeMetrics, DEFAULT_HOUSEHOLD, type Household, type Metrics } from './calc'
 import { getPushRegistration } from './push'
 import { clearToken, getToken, setToken } from './secure'
+import type { ServiceCategory } from './service'
 import { DEFAULT_NOTIF, type NotifPrefs } from './types'
 
 export type { NotifPrefs } from './types'
@@ -56,6 +57,15 @@ interface Store extends AppData {
   replaceFilter: () => void
   updateHousehold: (patch: Partial<Household>) => void
   updateNotif: (patch: Partial<NotifPrefs>) => void
+  /** Yeni teknik servis talebi oluşturur. Başarısızsa ApiError fırlatır (offline'da kuyruklanmaz). */
+  createServiceRequest: (input: {
+    category: ServiceCategory
+    description: string
+    contactPhone: string
+    contactName?: string
+  }) => Promise<ServiceRequestDTO>
+  /** Bu cihaza ait tüm servis taleplerini (en yeni önce) sunucudan getirir. */
+  listServiceRequests: () => Promise<ServiceRequestDTO[]>
 }
 
 const DAY = 86400000
@@ -364,6 +374,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [mutate, mutateSync, scheduleFlush, syncPush],
   )
 
+  const createServiceRequest: Store['createServiceRequest'] = useCallback(async (input) => {
+    const token = tokenRef.current
+    if (!token) throw new ApiError(401, 'unauthorized')
+    return api.createServiceRequest(token, input)
+  }, [])
+
+  const listServiceRequests: Store['listServiceRequests'] = useCallback(async () => {
+    const token = tokenRef.current
+    if (!token) throw new ApiError(401, 'unauthorized')
+    const { items } = await api.listServiceRequests(token)
+    return items
+  }, [])
+
   const value = useMemo<Store>(
     () => ({
       ...data,
@@ -380,8 +403,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       replaceFilter,
       updateHousehold,
       updateNotif,
+      createServiceRequest,
+      listServiceRequests,
     }),
-    [data, hydrated, activate, completeOnboarding, loadDemo, reset, replaceFilter, updateHousehold, updateNotif],
+    [
+      data,
+      hydrated,
+      activate,
+      completeOnboarding,
+      loadDemo,
+      reset,
+      replaceFilter,
+      updateHousehold,
+      updateNotif,
+      createServiceRequest,
+      listServiceRequests,
+    ],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

@@ -1,6 +1,6 @@
 import { del, get, post } from '../api.js'
 import { h } from '../dom.js'
-import { ago, AUDIT, date, dateTime, KIND, num, num1, PRESENCE, SOURCE, STATUS, tl, TONE, USES } from '../fmt.js'
+import { ago, AUDIT, date, dateTime, KIND, num, num1, PRESENCE, SERVICE_CATEGORY, SERVICE_STATUS, SOURCE, STATUS, tl, TONE, USES } from '../fmt.js'
 import { icon } from '../icons.js'
 import { confirmDialog, copyText, empty, liquidGauge, modal, skeleton, statusChip, toast, toneChip } from '../ui.js'
 
@@ -217,6 +217,26 @@ export async function deviceView(root, ctx, id) {
         : empty('Henüz bildirim gönderilmedi'),
     )
 
+    const serviceRequests = h(
+      'div',
+      { class: 'card' },
+      h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Servis talepleri'), h('a', { class: 'card-note', href: '#/service-requests' }, 'Tümü →')),
+      detail.serviceRequests.length
+        ? h(
+            'div',
+            { class: 'list' },
+            detail.serviceRequests.slice(0, 6).map((r) =>
+              h(
+                'div',
+                { class: 'it' },
+                h('div', { class: 'grow' }, h('div', { class: 'ttl' }, r.description), h('div', { class: 'meta' }, `${SERVICE_CATEGORY[r.category]?.label ?? r.category} · ${r.contactPhone} · ${ago(r.createdAt)}`)),
+                h('span', { class: `chip ${SERVICE_STATUS[r.status]?.cls ?? 'mute'}` }, SERVICE_STATUS[r.status]?.label ?? r.status),
+              ),
+            ),
+          )
+        : empty('Henüz servis talebi yok'),
+    )
+
     const noteInput = h('textarea', { class: 'input', maxlength: '500', placeholder: 'Bu cihaza dair iç not (bayi, müşteri adı, servis geçmişi…)' })
     noteInput.value = sm.note ?? ''
     const noteCard = h(
@@ -257,7 +277,7 @@ export async function deviceView(root, ctx, id) {
         h(
           'div',
           { class: 'grid g-21' },
-          h('div', { class: 'stack' }, filterCard, h('div', { class: 'grid g-2' }, profileCard, metricsCard), notifCard, notifications),
+          h('div', { class: 'stack' }, filterCard, h('div', { class: 'grid g-2' }, profileCard, metricsCard), notifCard, serviceRequests, notifications),
           h('div', { class: 'stack' }, h('div', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Aktivasyon kodu')), codeHost), h('div', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Yaşam döngüsü')), timeline), sessions, noteCard, audit, danger),
         ),
       ),

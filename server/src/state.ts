@@ -1,4 +1,5 @@
 import { computeMetrics, type Household, type Metrics } from '../../mobile/src/lib/calc.ts'
+import type { ServiceCategory, ServiceStatus } from '../../mobile/src/lib/service.ts'
 import type { DB } from './db.ts'
 import {
   DEFAULT_HOUSEHOLD,
@@ -79,5 +80,44 @@ export function toState(row: DeviceRow, now: number): StateDTO {
       new Date(now),
     ),
     serverTime: now,
+  }
+}
+
+export interface ServiceRequestRow {
+  id: number
+  device_id: number
+  category: string
+  description: string
+  contact_name: string | null
+  contact_phone: string
+  status: string
+  admin_note: string | null
+  created_at: number
+  updated_at: number
+}
+
+export interface ServiceRequestDTO {
+  id: number
+  category: ServiceCategory
+  description: string
+  contactName: string | null
+  contactPhone: string
+  status: ServiceStatus
+  adminNote: string | null
+  createdAt: number
+  updatedAt: number
+}
+
+export function toServiceRequestDTO(row: ServiceRequestRow): ServiceRequestDTO {
+  return {
+    id: row.id,
+    category: row.category as ServiceCategory,
+    description: row.description,
+    contactName: row.contact_name,
+    contactPhone: row.contact_phone,
+    status: row.status as ServiceStatus,
+    adminNote: row.admin_note,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   }
 }

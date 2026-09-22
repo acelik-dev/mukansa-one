@@ -18,10 +18,18 @@ import { tx, type DB } from '../db.ts'
 import type { PushSender } from '../push.ts'
 import { generateDevices, importDevices, isKnownModel } from '../provision.ts'
 import type { PassResult } from '../scheduler.ts'
-import { getDevice, type DeviceRow } from '../state.ts'
+import { serviceRequestActionBody } from '../schema.ts'
+import { getDevice, toServiceRequestDTO, type DeviceRow, type ServiceRequestRow } from '../state.ts'
 import type { SchedulerStatus } from '../status.ts'
 import { generatePassword, hashPassword, MIN_PASSWORD_LENGTH, verifyPassword } from './password.ts'
-import { deviceDetail, deviceStatus, listDevices, notificationKind, overview } from './queries.ts'
+import {
+  deviceDetail,
+  deviceStatus,
+  listDevices,
+  listServiceRequests,
+  notificationKind,
+  overview,
+} from './queries.ts'
 
 const COOKIE = 'mk_admin'
 const SESSION_TTL_MS = 12 * 3600 * 1000
@@ -491,6 +499,36 @@ export async function buildAdminApp(opts: AdminAppOptions): Promise<FastifyInsta
       .filter((n) => !q.kind || q.kind === 'all' || n.kind === q.kind)
       .slice(0, q.limit)
     return { items }
+  })
+
+  // ------------------------------------------------------------- servis talepleri
+  app.get('/api/service-requests', auth, async (req) => {
+    const q = z
+      .object({
+        status: z.string().optional(),
+        page: z.coerce.number().int().optional(),
+        pageSize: z.coerce.number().int().optional(),
+      })
+      .parse(req.query)
+    return listServiceRequests(db, q)
+  })
+
+  app.post('/api/service-requests/:id/action', auth, async (req) => {
+    const { id } = idParam.parse(req.params)
+    const body = serviceRequestActionBody.parse(req.body)
+    const existing = db.prepare('SELECT * FROM service_requests WHERE id = ?').get(id) as unknown as ServiceRequestRow | undefined
+    if (!existing) throw httpError(404, 'not_found')
+    const t = now()
+    if (body.status) db.prepare('UPDATE service_requests SET status = ?, updated_at = ? WHERE id = ?').run(body.status, t, id)
+    if (body.adminNote !== undefined) db.prepare('UPDATE service_requests SET admin_note = ?, updated_at = ? WHERE id = ?').run(body.adminNote || null, t, id)
+    audit(
+      req.admin!.username,
+      'service_request_update',
+      existing.device_id,
+      [body.status ? `durum → ${body.status}` : null, body.adminNote !== undefined ? 'not güncellendi' : null].filter(Boolean).join(', '),
+    )
+    const updated = db.prepare('SELECT * FROM service_requests WHERE id = ?').get(id) as unknown as ServiceRequestRow
+    return toServiceRequestDTO(updated)
   })
 
   // ------------------------------------------------------------ denetim günlüğü

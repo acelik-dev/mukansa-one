@@ -9,6 +9,7 @@ import { loginView } from './views/login.js'
 import { notificationsView } from './views/notifications.js'
 import { overviewView } from './views/overview.js'
 import { provisionView } from './views/provision.js'
+import { serviceRequestsView } from './views/service-requests.js'
 import { systemView } from './views/system.js'
 
 const app = document.getElementById('app')
@@ -17,6 +18,7 @@ const NAV = [
   { path: '/overview', label: 'Genel bakış', icon: 'layout' },
   { path: '/devices', label: 'Cihazlar', icon: 'droplet', badge: true },
   { path: '/provision', label: 'Aktivasyon kodları', icon: 'key' },
+  { path: '/service-requests', label: 'Servis talepleri', icon: 'wrench' },
   { path: '/notifications', label: 'Bildirimler', icon: 'bell' },
   { path: '/audit', label: 'Denetim günlüğü', icon: 'shield' },
   { path: '/system', label: 'Sistem & ayarlar', icon: 'sliders' },
@@ -128,6 +130,7 @@ async function route() {
       if (q.tone || q.status) setListFilter({ tone: q.tone ?? 'all', status: q.status ?? 'all' })
       await devicesView(view, ctx)
     } else if (section === 'provision') await provisionView(view, ctx)
+    else if (section === 'service-requests') await serviceRequestsView(view, ctx)
     else if (section === 'notifications') await notificationsView(view, ctx)
     else if (section === 'audit') await auditView(view, ctx)
     else if (section === 'system') await systemView(view, ctx)

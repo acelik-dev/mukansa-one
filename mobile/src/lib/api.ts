@@ -1,5 +1,6 @@
 import type { Household, Metrics } from './calc'
 import { apiBaseUrl } from './config'
+import type { ServiceCategory, ServiceStatus } from './service'
 import type { NotifPrefs } from './types'
 
 const TIMEOUT_MS = 12_000
@@ -31,6 +32,18 @@ export interface ServerState {
   notif: NotifPrefs
   metrics: Metrics
   serverTime: number
+}
+
+export interface ServiceRequestDTO {
+  id: number
+  category: ServiceCategory
+  description: string
+  contactName: string | null
+  contactPhone: string
+  status: ServiceStatus
+  adminNote: string | null
+  createdAt: number
+  updatedAt: number
 }
 
 async function request<T>(
@@ -92,4 +105,12 @@ export const api = {
     request<void>('PUT', '/v1/push-token', { token, body: { token: pushToken, platform } }),
 
   logout: (token: string) => request<void>('DELETE', '/v1/session', { token }),
+
+  createServiceRequest: (
+    token: string,
+    body: { category: ServiceCategory; description: string; contactPhone: string; contactName?: string },
+  ) => request<ServiceRequestDTO>('POST', '/v1/service-requests', { token, body }),
+
+  listServiceRequests: (token: string) =>
+    request<{ items: ServiceRequestDTO[] }>('GET', '/v1/service-requests', { token }),
 }
