@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mukansa One",
     "slug": "mukansa-one",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -10,19 +10,20 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mukansa.one",
-      "buildNumber": "1",
+      "buildNumber": "3",
       "backgroundColor": "#0c1418"
     },
     "android": {
       "package": "com.mukansa.one",
-      "versionCode": 1,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#0c1418",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -31,6 +32,12 @@
     "plugins": [
       "expo-secure-store",
       "expo-notifications"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b7e7ea0d-31a2-426a-a951-b6b0d8bd1ac9"
+      }
+    },
+    "owner": "mukansaone"
   }
 }
