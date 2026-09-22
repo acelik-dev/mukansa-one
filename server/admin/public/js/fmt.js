@@ -42,6 +42,7 @@ export const KIND = {
   weekly: { label: 'Haftalık', cls: 'water' },
   milestone: { label: 'Kilometre taşı', cls: 'gold' },
   manual: { label: 'Manuel', cls: 'mute' },
+  service: { label: 'Servis talebi', cls: 'gold' },
   other: { label: 'Diğer', cls: 'mute' },
 }
 export const AUDIT = {

@@ -85,3 +85,27 @@ test('mobil taraf: giriş yapmamış panel isteği 401', async () => {
   const res = await ctx.admin.inject({ method: 'GET', url: '/api/service-requests' })
   assert.equal(res.statusCode, 401)
 })
+
+test('durum değişince cihaza push bildirimi gider', async () => {
+  const ctx = await setupAdmin()
+  const r = await makeRequest(ctx)
+
+  await ctx.api('POST', `/api/service-requests/${r.id}/action`, { status: 'in_progress' })
+  assert.equal(ctx.sent.length, 1)
+  assert.equal(ctx.sent[0]!.to, 'ExponentPushToken[panel-test]')
+  assert.match(ctx.sent[0]!.body, /İşlemde/)
+
+  const list = (await ctx.api('GET', '/api/notifications')).json().items
+  assert.ok(list.some((n: { kind: string }) => n.kind === 'service'))
+})
+
+test('sadece not güncellenince (durum aynı kalınca) bildirim gitmez', async () => {
+  const ctx = await setupAdmin()
+  const r = await makeRequest(ctx)
+
+  await ctx.api('POST', `/api/service-requests/${r.id}/action`, { adminNote: 'sadece not' })
+  assert.equal(ctx.sent.length, 0)
+
+  await ctx.api('POST', `/api/service-requests/${r.id}/action`, { status: 'open' })
+  assert.equal(ctx.sent.length, 0, 'aynı duruma tekrar set etmek bildirim tetiklememeli')
+})

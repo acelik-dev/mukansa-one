@@ -172,6 +172,7 @@ export function notificationKind(key: string): string {
   if (key.startsWith('weekly')) return 'weekly'
   if (key.startsWith('milestone-')) return 'milestone'
   if (key.startsWith('manual:')) return 'manual'
+  if (key.startsWith('service:')) return 'service'
   return 'other'
 }
 

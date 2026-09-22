@@ -20,6 +20,7 @@ import { generateDevices, importDevices, isKnownModel } from '../provision.ts'
 import type { PassResult } from '../scheduler.ts'
 import { serviceRequestActionBody } from '../schema.ts'
 import { getDevice, toServiceRequestDTO, type DeviceRow, type ServiceRequestRow } from '../state.ts'
+import { SERVICE_STATUS_LABEL, type ServiceStatus } from '../../../mobile/src/lib/service.ts'
 import type { SchedulerStatus } from '../status.ts'
 import { generatePassword, hashPassword, MIN_PASSWORD_LENGTH, verifyPassword } from './password.ts'
 import {
@@ -519,6 +520,7 @@ export async function buildAdminApp(opts: AdminAppOptions): Promise<FastifyInsta
     const existing = db.prepare('SELECT * FROM service_requests WHERE id = ?').get(id) as unknown as ServiceRequestRow | undefined
     if (!existing) throw httpError(404, 'not_found')
     const t = now()
+    const statusChanged = !!body.status && body.status !== existing.status
     if (body.status) db.prepare('UPDATE service_requests SET status = ?, updated_at = ? WHERE id = ?').run(body.status, t, id)
     if (body.adminNote !== undefined) db.prepare('UPDATE service_requests SET admin_note = ?, updated_at = ? WHERE id = ?').run(body.adminNote || null, t, id)
     audit(
@@ -527,6 +529,30 @@ export async function buildAdminApp(opts: AdminAppOptions): Promise<FastifyInsta
       existing.device_id,
       [body.status ? `durum → ${body.status}` : null, body.adminNote !== undefined ? 'not güncellendi' : null].filter(Boolean).join(', '),
     )
+    if (statusChanged) {
+      const tokens = db
+        .prepare('SELECT id, push_token FROM sessions WHERE device_id = ? AND push_token IS NOT NULL')
+        .all(existing.device_id) as { id: number; push_token: string }[]
+      if (tokens.length > 0) {
+        const title = 'Servis talebiniz güncellendi'
+        const pushBody = `Durum: ${SERVICE_STATUS_LABEL[body.status as ServiceStatus]}${body.adminNote ? ` — ${body.adminNote}` : ''}`
+        const results = await opts.send(
+          tokens.map((x) => ({
+            to: x.push_token,
+            title,
+            body: pushBody,
+            data: { type: 'service_request', screen: 'device', requestId: id },
+          })),
+        )
+        results.forEach((r, i) => {
+          if (r.invalidToken) db.prepare('UPDATE sessions SET push_token = NULL WHERE id = ?').run(tokens[i]!.id)
+        })
+        const delivered = results.some((r) => r.ok)
+        db.prepare(
+          'INSERT INTO notification_log (device_id, key, sent_at, delivered, title, body) VALUES (?, ?, ?, ?, ?, ?)',
+        ).run(existing.device_id, `service:${id}:${t}:${randomBytes(3).toString('hex')}`, t, delivered ? 1 : 0, title, pushBody)
+      }
+    }
     const updated = db.prepare('SELECT * FROM service_requests WHERE id = ?').get(id) as unknown as ServiceRequestRow
     return toServiceRequestDTO(updated)
   })

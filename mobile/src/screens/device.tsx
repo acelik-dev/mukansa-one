@@ -138,32 +138,34 @@ export function Device() {
         />
       </View>
 
-      {requests.length > 0 && (
-        <>
-          <Text style={styles.section}>Taleplerim</Text>
-          <View style={styles.serviceList}>
-            {requests.map((r, i) => (
-              <View
-                key={r.id}
-                style={[styles.requestRow, i < requests.length - 1 && styles.serviceBorder]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.requestTitle}>{SERVICE_CATEGORY_LABEL[r.category]}</Text>
-                  <Text style={styles.requestDesc} numberOfLines={2}>
-                    {r.description}
-                  </Text>
-                  <Text style={styles.muted}>{formatDate(r.createdAt)}</Text>
-                </View>
-                <View style={[styles.statusChip, { borderColor: statusColor(r.status) }]}>
-                  <Text style={[styles.statusChipText, { color: statusColor(r.status) }]}>
-                    {SERVICE_STATUS_LABEL[r.status]}
-                  </Text>
-                </View>
-              </View>
-            ))}
+      <Text style={styles.section}>Taleplerim</Text>
+      <View style={styles.serviceList}>
+        {requests.length === 0 ? (
+          <View style={styles.requestRow}>
+            <Text style={styles.muted}>Henüz servis talebiniz yok.</Text>
           </View>
-        </>
-      )}
+        ) : (
+          requests.map((r, i) => (
+            <View
+              key={r.id}
+              style={[styles.requestRow, i < requests.length - 1 && styles.serviceBorder]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.requestTitle}>{SERVICE_CATEGORY_LABEL[r.category]}</Text>
+                <Text style={styles.requestDesc} numberOfLines={2}>
+                  {r.description}
+                </Text>
+                <Text style={styles.muted}>{formatDate(r.createdAt)}</Text>
+              </View>
+              <View style={[styles.statusChip, { borderColor: statusColor(r.status) }]}>
+                <Text style={[styles.statusChipText, { color: statusColor(r.status) }]}>
+                  {SERVICE_STATUS_LABEL[r.status]}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
 
       <Modal visible={flow !== 'idle'} transparent animationType="fade">
         <ReplaceFilterFlow
