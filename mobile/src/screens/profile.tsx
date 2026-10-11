@@ -37,7 +37,7 @@ const SOURCE_LABEL: Record<SourceType, string> = {
 
 const UNLINK_TITLE = 'Cihaz bağlantısı kaldırılsın mı?'
 const UNLINK_BODY =
-  'Bu telefondaki oturum kapanır. Verileriniz cihaza bağlı kalır; seri numaranızla istediğiniz zaman yeniden bağlanabilirsiniz.'
+  'Bu telefondaki oturum kapanır. Verileriniz cihaza bağlı kalır; aktivasyon kodunuzla istediğiniz zaman yeniden bağlanabilirsiniz.'
 
 export function Profile() {
   const { household, notif, updateHousehold, updateNotif, reset } = useApp()

@@ -274,7 +274,7 @@ function Activation({
   const submit = async () => {
     const code = digits.join('')
     if (code.length < 12) {
-      setError('Lütfen 12 haneli seri numarasını eksiksiz girin.')
+      setError('Lütfen 12 haneli aktivasyon kodunu eksiksiz girin.')
       return
     }
     setVerifying(true)
@@ -287,7 +287,7 @@ function Activation({
       setError(
         err instanceof ApiError
           ? err.code === 'invalid_code'
-            ? 'Bu seri numarası tanınmadı. Etiketteki 12 haneyi kontrol edin.'
+            ? 'Bu aktivasyon kodu tanınmadı. Etiketteki 12 haneyi kontrol edin.'
             : err.code === 'device_blocked'
               ? 'Bu cihaz için erişim kapatılmış. Lütfen destek ekibiyle iletişime geçin.'
             : err.status === 429
@@ -310,7 +310,7 @@ function Activation({
       <Eyebrow>Aktivasyon</Eyebrow>
       <Text style={styles.h2}>Cihazınızı doğrulayalım</Text>
       <Text style={styles.sub}>
-        Cihazınızın altındaki etikette yer alan 12 haneli seri numarasını girin.
+        Cihazınızın altındaki etikette yer alan 12 haneli aktivasyon kodunu girin.
       </Text>
 
       <View style={styles.serialCenter}>
@@ -342,7 +342,7 @@ function Activation({
         </View>
         {!!error && <Text style={styles.errorText}>{error}</Text>}
         <Text style={styles.serialHint}>
-          Seri numarası cihazın alt yüzeyindeki gümüş etikette bulunur.
+          Aktivasyon kodu cihazın alt yüzeyindeki gümüş etikette bulunur.
         </Text>
       </View>
 

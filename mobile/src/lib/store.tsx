@@ -48,7 +48,7 @@ interface Store extends AppData {
   /** Cihaz aktive edilmiş ama onboarding bitmemişse kaldığı yerden devam bilgisi */
   resume: { serialNo: string; modelId: string } | null
   metrics: Metrics
-  /** Seri numarasını sunucuda doğrular. Başarısızsa ApiError fırlatır. */
+  /** Aktivasyon kodunu sunucuda doğrular. Başarısızsa ApiError fırlatır. */
   activate: (code: string) => Promise<{ onboarded: boolean }>
   completeOnboarding: (data: { household: Household; allowPush: boolean }) => Promise<void>
   loadDemo: () => void
