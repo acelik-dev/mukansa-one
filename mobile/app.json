@@ -10,8 +10,11 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mukansa.one",
-      "buildNumber": "3",
-      "backgroundColor": "#0c1418"
+      "buildNumber": "4",
+      "backgroundColor": "#0c1418",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.mukansa.one",
