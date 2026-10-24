@@ -13,5 +13,13 @@
       "autoIncrement": true,
       "env": { "EXPO_PUBLIC_API_URL": "https://mukansa-one-api.onixmedya.com.tr" }
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleTeamId": "292UCZ485K",
+        "language": "tr-TR"
+      }
+    }
   }
 }
